@@ -1,0 +1,33 @@
+{
+  "name": "spektrum-mcp",
+  "version": "1.0.0",
+  "description": "MCP Server für SPEKTRUM Partner GmbH — MINU-AI, Interessenabwägung, Bauzonen und mehr",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "spektrum-mcp": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsc && node dist/index.js"
+  },
+  "keywords": [
+    "mcp",
+    "meeting-protocol",
+    "transcription",
+    "switzerland",
+    "spektrum",
+    "minu-ai"
+  ],
+  "author": "SPEKTRUM Partner GmbH <info@spekt.ch>",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.25.3",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "typescript": "^5.3.0"
+  }
+}
