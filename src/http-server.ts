@@ -13,7 +13,7 @@ import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/
 import { z } from "zod";
 import { MINU_AI, SPEKTRUM } from "./minu-ai-data.js";
 
-const PORT = parseInt(process.env.PORT || "3010");
+const PORT = parseInt(process.env.PORT || "3011");
 
 const sseTransports = new Map<string, SSEServerTransport>();
 const streamableTransports = new Map<string, { transport: StreamableHTTPServerTransport; server: McpServer }>();
