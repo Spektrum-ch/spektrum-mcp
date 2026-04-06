@@ -6,14 +6,17 @@
  */
 
 import http from "node:http";
+import { randomUUID } from "node:crypto";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
+import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { z } from "zod";
 import { MINU_AI, SPEKTRUM } from "./minu-ai-data.js";
 
 const PORT = parseInt(process.env.PORT || "3010");
 
-const transports = new Map<string, SSEServerTransport>();
+const sseTransports = new Map<string, SSEServerTransport>();
+const streamableTransports = new Map<string, { transport: StreamableHTTPServerTransport; server: McpServer }>();
 
 function createServer(): McpServer {
   const server = new McpServer({ name: "spektrum", version: "1.0.0" });
@@ -146,21 +149,87 @@ const httpServer = http.createServer(async (req, res) => {
     return;
   }
 
-  // SSE Endpoint
+  // StreamableHTTP Endpoint (für Smithery und moderne MCP-Clients)
+  if (url.pathname === "/mcp") {
+    // POST: Initialisierung oder JSON-RPC Nachrichten
+    if (req.method === "POST") {
+      // Body einlesen
+      const body = await new Promise<string>((resolve) => {
+        let data = "";
+        req.on("data", (chunk: Buffer) => { data += chunk.toString(); });
+        req.on("end", () => resolve(data));
+      });
+      const parsedBody = JSON.parse(body);
+
+      // Session-ID aus Header prüfen
+      const sessionId = req.headers["mcp-session-id"] as string | undefined;
+
+      if (sessionId && streamableTransports.has(sessionId)) {
+        // Bestehende Session
+        const entry = streamableTransports.get(sessionId)!;
+        await entry.transport.handleRequest(req, res, parsedBody);
+      } else {
+        // Neue Session erstellen
+        const transport = new StreamableHTTPServerTransport({
+          sessionIdGenerator: () => randomUUID(),
+        });
+        const server = createServer();
+        await server.connect(transport);
+        const newSessionId = transport.sessionId!;
+        streamableTransports.set(newSessionId, { transport, server });
+
+        transport.onclose = () => {
+          streamableTransports.delete(newSessionId);
+        };
+
+        await transport.handleRequest(req, res, parsedBody);
+      }
+      return;
+    }
+
+    // GET: SSE-Stream für Server-Notifications
+    if (req.method === "GET") {
+      const sessionId = req.headers["mcp-session-id"] as string | undefined;
+      if (sessionId && streamableTransports.has(sessionId)) {
+        const entry = streamableTransports.get(sessionId)!;
+        await entry.transport.handleRequest(req, res);
+      } else {
+        res.writeHead(400, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "Keine gültige Session. Zuerst POST /mcp senden." }));
+      }
+      return;
+    }
+
+    // DELETE: Session beenden
+    if (req.method === "DELETE") {
+      const sessionId = req.headers["mcp-session-id"] as string | undefined;
+      if (sessionId && streamableTransports.has(sessionId)) {
+        const entry = streamableTransports.get(sessionId)!;
+        await entry.transport.handleRequest(req, res);
+        streamableTransports.delete(sessionId);
+      } else {
+        res.writeHead(404, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "Session nicht gefunden" }));
+      }
+      return;
+    }
+  }
+
+  // Legacy SSE Endpoint
   if (req.method === "GET" && url.pathname === "/sse") {
     const transport = new SSEServerTransport("/messages", res);
     const sessionId = transport.sessionId;
-    transports.set(sessionId, transport);
+    sseTransports.set(sessionId, transport);
     const server = createServer();
-    res.on("close", () => { transports.delete(sessionId); });
+    res.on("close", () => { sseTransports.delete(sessionId); });
     await server.connect(transport);
     return;
   }
 
-  // Messages Endpoint
+  // Legacy Messages Endpoint
   if (req.method === "POST" && url.pathname === "/messages") {
     const sessionId = url.searchParams.get("sessionId");
-    const transport = sessionId ? transports.get(sessionId) : undefined;
+    const transport = sessionId ? sseTransports.get(sessionId) : undefined;
     if (!transport) {
       res.writeHead(400, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ error: "Unknown session" }));
