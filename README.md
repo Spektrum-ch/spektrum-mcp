@@ -1,6 +1,16 @@
 # SPEKTRUM MCP Server
 
+[![Install on Smithery](https://smithery.ai/badge/@spektrum-ch/spektrum-mcp)](https://smithery.ai/server/@spektrum-ch/spektrum-mcp)
+
 MCP Server für [SPEKTRUM Partner GmbH](https://spekt.ch) — stellt Produktinformationen als AI-Tools bereit.
+
+## Install via Smithery
+
+The easiest way to install is via [Smithery](https://smithery.ai/server/@spektrum-ch/spektrum-mcp):
+
+```bash
+npx -y @smithery/cli install @spektrum-ch/spektrum-mcp --client claude
+```
 
 ## Tools
 
