@@ -1,8 +1,18 @@
 startCommand:
-  type: stdio
-  configSchema: {}
-  commandFunction: |-
-    (config) => ({
-      command: "node",
-      args: ["dist/index.js"]
-    })
+  type: http
+  configSchema:
+    type: object
+    properties:
+      kanton:
+        type: string
+        title: Kanton
+        description: "Schweizer Kanton für GIS-Abfragen (z.B. ZH, BE, AG)"
+        default: ZH
+        enum: [ZH, BE, AG, LU, SG, BS, BL, SO, TG, SH]
+      sprache:
+        type: string
+        title: Sprache
+        description: "Ausgabesprache der Resultate"
+        default: de
+        enum: [de, fr, en]
+  url: "https://mcp.spekt.ch/sse"
