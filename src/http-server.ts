@@ -10,6 +10,20 @@ import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { createSpektrumServer } from "./index.js";
 
+/**
+ * Extrahiert den API-Key aus einem eingehenden HTTP-Request (für IAW-/UVP-Tools).
+ * Akzeptiert: X-API-Key Header oder Authorization: Bearer <key>
+ */
+function extractApiKey(req: http.IncomingMessage): string | undefined {
+  const xKey = req.headers["x-api-key"];
+  if (typeof xKey === "string" && xKey.length > 0) return xKey;
+  const auth = req.headers["authorization"];
+  if (typeof auth === "string" && auth.toLowerCase().startsWith("bearer ")) {
+    return auth.substring(7).trim();
+  }
+  return undefined;
+}
+
 const PORT = parseInt(process.env.PORT || "3011");
 
 const sseTransports = new Map<string, SSEServerTransport>();
@@ -18,7 +32,7 @@ const httpServer = http.createServer(async (req, res) => {
   // CORS Headers
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, X-API-Key, Authorization");
 
   if (req.method === "OPTIONS") {
     res.writeHead(204);
@@ -31,7 +45,7 @@ const httpServer = http.createServer(async (req, res) => {
   // Health Check
   if (req.method === "GET" && url.pathname === "/health") {
     res.writeHead(200, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({ status: "ok", server: "spektrum-mcp", version: "1.0.0" }));
+    res.end(JSON.stringify({ status: "ok", server: "spektrum-mcp", version: "1.2.0" }));
     return;
   }
 
@@ -49,7 +63,7 @@ const httpServer = http.createServer(async (req, res) => {
       const transport = new StreamableHTTPServerTransport({
         sessionIdGenerator: undefined,
       });
-      const server = createSpektrumServer();
+      const server = createSpektrumServer(extractApiKey(req));
       await server.connect(transport);
       await transport.handleRequest(req, res, parsedBody);
       await transport.close();

@@ -15,6 +15,8 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
 import { MINU_AI, SPEKTRUM } from "./minu-ai-data.js";
+import { registerIawTools } from "./iaw-tools.js";
+import { registerUvpTools } from "./uvp-tools.js";
 
 // ============================================================================
 // Config schema for Smithery (no user config needed)
@@ -24,11 +26,15 @@ export const configSchema = z.object({});
 // ============================================================================
 // Server factory — used by Smithery runtime and HTTP transport
 // ============================================================================
-export function createSpektrumServer(): McpServer {
+export function createSpektrumServer(apiKey?: string): McpServer {
   const server = new McpServer({
     name: "spektrum",
-    version: "1.0.0",
+    version: "1.2.0",
   });
+
+  // Interessenabwägung + UVP-Screening (Action-Tools, API-Key aus Header oder IAW_API_KEY)
+  registerIawTools(server, { apiKey });
+  registerUvpTools(server, { apiKey });
 
   // TOOL 1: get_minu_info
   // Returns complete MINU-AI product information including features, pricing,
