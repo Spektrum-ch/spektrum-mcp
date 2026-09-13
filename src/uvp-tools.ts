@@ -115,7 +115,7 @@ export function registerUvpTools(server: McpServer, ctx: UvpContext = {}) {
     "Erzeugt das Word-Dokument zu einem UVP-Screening: 'screening' (Voruntersuchung und Pflichtenheft-Entwurf), 'pruefliste' (Verfahrens- und Vollständigkeitspunkte Bund/Typ/Kanton mit Belegstatus) oder 'ausfuehrlich' (Tiefenbericht; setzt voraus, dass er in der Web-UI erstellt wurde). Liefert Dateiname, Grösse, Base64-Inhalt und eine Download-URL (mit API-Key).",
     {
       case_id: z.string().describe("Case-ID"),
-      variante: z.enum(["screening", "pruefliste", "ausfuehrlich"]).optional().default("screening"),
+      variante: z.enum(["screening", "pruefliste", "ausfuehrlich", "voruntersuchung", "umweltnotiz"]).optional().default("screening").describe("screening = Kurzfassung; pruefliste = Prüfliste; ausfuehrlich = Tiefenbericht (Abo, zuerst in der Web-UI erstellen); voruntersuchung = Voruntersuchungsbericht mit Pflichtenheft (Bern B-1); umweltnotiz = Bericht für nicht UVP-pflichtige Vorhaben (Art. 46 USG)"),
     },
     async ({ case_id, variante }) => {
       const data = (await callApi(`/uvp/${encodeURIComponent(case_id)}/export?variante=${variante}`, { apiKey: ctx.apiKey })) as Record<string, unknown>;
