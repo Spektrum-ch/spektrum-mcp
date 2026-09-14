@@ -68,6 +68,7 @@ export function registerUvpTools(server: McpServer, ctx: UvpContext = {}) {
       flaeche_ha: z.number().optional().describe("Fläche in Hektaren (ohne Polygon)"),
       beschreibung: z.string().optional().describe("Kurzbeschreibung des Vorhabens (Betrieb, Verkehr, Emissionen, Bauphasen)"),
       verfahrensstufe: z.enum(["voruntersuchung", "hauptuntersuchung"]).optional().default("voruntersuchung"),
+      sprache: z.enum(["de", "fr", "it"]).optional().default("de").describe("Sprache der KI-Texte und Dokumente: de (Standard), fr, it"),
       dokumente: z.array(z.object({ name: z.string(), content: z.string() })).max(3).optional().describe("Projektunterlagen als Volltext (max. 3; serverseitig auf ein Zeichenbudget gekürzt)"),
       vorhaben: z.object({
         bauten: z.string().optional(), geschossflaecheM2: z.number().optional(), betriebszeiten: z.string().optional(), arbeitsplaetze: z.number().optional(),
@@ -103,8 +104,9 @@ export function registerUvpTools(server: McpServer, ctx: UvpContext = {}) {
     {
       case_id: z.string().describe("Case-ID"),
       force: z.boolean().optional().default(false).describe("Erneut erzeugen, auch wenn schon eine Gegenprüfung vorliegt"),
+      sprache: z.enum(["de", "fr", "it"]).optional().default("de").describe("Sprache der KI-Texte und Dokumente: de (Standard), fr, it"),
     },
-    async ({ case_id, force }) => jsonResult(await callApi(`/uvp/${encodeURIComponent(case_id)}/critique`, { method: "POST", body: { force }, apiKey: ctx.apiKey }))
+    async ({ case_id, force, sprache }) => jsonResult(await callApi(`/uvp/${encodeURIComponent(case_id)}/critique`, { method: "POST", body: { force, sprache }, apiKey: ctx.apiKey }))
   );
 
   // ============================================================================
@@ -116,9 +118,10 @@ export function registerUvpTools(server: McpServer, ctx: UvpContext = {}) {
     {
       case_id: z.string().describe("Case-ID"),
       variante: z.enum(["screening", "pruefliste", "ausfuehrlich", "voruntersuchung", "umweltnotiz"]).optional().default("screening").describe("screening = Kurzfassung; pruefliste = Prüfliste; ausfuehrlich = Tiefenbericht (Abo, zuerst in der Web-UI erstellen); voruntersuchung = Voruntersuchungsbericht mit Pflichtenheft (Bern B-1); umweltnotiz = Bericht für nicht UVP-pflichtige Vorhaben (Art. 46 USG)"),
+      sprache: z.enum(["de", "fr", "it"]).optional().default("de").describe("Sprache der KI-Texte und Dokumente: de (Standard), fr, it"),
     },
-    async ({ case_id, variante }) => {
-      const data = (await callApi(`/uvp/${encodeURIComponent(case_id)}/export?variante=${variante}`, { apiKey: ctx.apiKey })) as Record<string, unknown>;
+    async ({ case_id, variante, sprache }) => {
+      const data = (await callApi(`/uvp/${encodeURIComponent(case_id)}/export?variante=${variante}&lang=${sprache}`, { apiKey: ctx.apiKey })) as Record<string, unknown>;
       // Base64 nicht in den Chat kippen — Metadaten reichen; der Inhalt bleibt im Ergebnisobjekt abrufbar.
       const { base64, ...meta } = data;
       return jsonResult({ ...meta, base64_laenge: typeof base64 === "string" ? base64.length : 0, base64 });
