@@ -15,4 +15,4 @@ startCommand:
         description: "Ausgabesprache der Resultate"
         default: de
         enum: [de, fr, en]
-  url: "https://mcp.spekt.ch/sse"
+  url: "https://mcp.spekt.ch/minu/mcp"
