@@ -25,6 +25,8 @@ function extractApiKey(req: http.IncomingMessage): string | undefined {
 }
 
 const PORT = parseInt(process.env.PORT || "3011");
+// HOST=127.0.0.1 bindet nur an das Loopback (Betrieb hinter dem Gateway).
+const HOST = process.env.HOST || undefined;
 
 const sseTransports = new Map<string, SSEServerTransport>();
 
@@ -106,6 +108,6 @@ const httpServer = http.createServer(async (req, res) => {
   res.end(JSON.stringify({ error: "Not found" }));
 });
 
-httpServer.listen(PORT, () => {
-  console.log(`SPEKTRUM MCP Server läuft auf Port ${PORT}`);
+httpServer.listen(PORT, HOST, () => {
+  console.log(`SPEKTRUM MCP Server läuft auf ${HOST ?? "0.0.0.0"}:${PORT}`);
 });
