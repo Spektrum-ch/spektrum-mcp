@@ -8,6 +8,7 @@
 
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { rechtsprechungSuchen } from "./entscheidsuche.js";
 
 const IAW_API_BASE = process.env.IAW_API_BASE || "https://interessenabwaegung.ch/api/v1";
 
@@ -138,12 +139,14 @@ export function registerIawTools(server: McpServer, ctx: IawContext = {}) {
 
   // ============================================================================
   // TOOL: rechtsprechung_suchen — Schweizer Gerichtsentscheide finden
+  // Direkt auf entscheidsuche.ch (kein IAW-Key nötig), mit Raumplanungs-
+  // Kuratierung: Fach-Boosts je Planungsanlass, Regeste, Fundstellen.
   // ============================================================================
   server.tool(
     "rechtsprechung_suchen",
-    "Sucht relevante Schweizer Gerichtsentscheide zu raumplanungsrechtlichen Fragen. Datenquelle: entscheidsuche.ch (Bundesgericht, Bundesverwaltungsgericht, Kantone). Direkt im Chat nutzbar — kein Human-in-the-Loop nötig.",
+    "Sucht Schweizer Gerichtsentscheide zu raumplanungs- und baurechtlichen Fragen — Volltextsuche über BGer/BGE und alle kantonalen Gerichte (inkl. Verwaltungs- und Baurekursgerichte). Liefert pro Treffer Regeste/Leitsatz (wo publiziert), Fundstellen-Ausschnitte und den Link zum Originalurteil. Quelle: entscheidsuche.ch, tagesaktuell. Direkt im Chat nutzbar, kein API-Key nötig.",
     {
-      thema: z.string().describe("Thema oder Stichwort, z.B. 'Einzonung Fruchtfolgeflächen'"),
+      thema: z.string().describe("Thema oder Stichwörter, z.B. 'Einzonung Fruchtfolgeflächen' oder 'Gewässerraum Ausnahmebewilligung'"),
       planungsanlass: z
         .enum([
           "einzonung",
@@ -152,21 +155,27 @@ export function registerIawTools(server: McpServer, ctx: IawContext = {}) {
           "gestaltungsplan",
           "sondernutzungsplan",
         ])
-        .optional(),
+        .optional()
+        .describe("Boostet Urteile zum entsprechenden Planungsanlass (Synonyme werden mitgesucht)"),
       kanton: z
         .string()
         .optional()
-        .describe("Kantons-Kürzel zum Filtern (z.B. 'ZH')"),
+        .describe("Kantons-Kürzel zum Filtern (z.B. 'ZH'); 'CH' = Bundesgerichte"),
+      nur_bundesgericht: z
+        .boolean()
+        .optional()
+        .describe("Nur BGer/BGE (übersteuert kanton)"),
+      ab_datum: z
+        .string()
+        .optional()
+        .describe("Nur Entscheide ab diesem Datum, Format YYYY-MM-DD"),
+      sortierung: z
+        .enum(["relevanz", "datum"])
+        .optional()
+        .describe("Standard: relevanz; 'datum' = neueste zuerst"),
       limit: z.number().min(1).max(20).optional().default(5),
     },
-    async (args) => {
-      const data = await callIawApi("/rechtsprechung/suche", {
-        method: "POST",
-        body: args,
-        apiKey: ctx.apiKey,
-      });
-      return jsonResult(data);
-    }
+    async (args) => jsonResult(await rechtsprechungSuchen(args))
   );
 
   // ============================================================================
