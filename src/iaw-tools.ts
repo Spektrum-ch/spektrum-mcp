@@ -179,6 +179,48 @@ export function registerIawTools(server: McpServer, ctx: IawContext = {}) {
   );
 
   // ============================================================================
+  // TOOL: rechtsprechung_korpus_suchen — kuratierter Urteilskorpus (Urteilssuche)
+  // Anders als rechtsprechung_suchen (Live-Volltextsuche bei entscheidsuche.ch)
+  // antwortet dieses Werkzeug aus dem eigenen, annotierten Korpus von
+  // tools.spekt.ch/urteilssuche: Themenfeld, Planungsanlass, Schutzgut,
+  // Prüfdimension, Verfahrensausgang, eigener Leitsatz je Entscheid,
+  // Facetten und Ausgangsstatistik. Braucht den IAW-API-Key (GET /api/v1/rechtsprechung).
+  // ============================================================================
+  const THEMENFELDER = [
+    "interessenabwaegung",
+    "bauen_ausserhalb_bauzone",
+    "baubewilligung_umwelt",
+    "nutzungsplanung_zweitwohnungen",
+    "schutz_enteignung_mehrwert",
+  ] as const;
+  server.tool(
+    "rechtsprechung_korpus_suchen",
+    "Sucht im kuratierten Urteilskorpus der Urteilssuche (tools.spekt.ch/urteilssuche): Bundesgerichtspraxis zu Raumplanung und Baurecht mit eigenem Leitsatz je Entscheid, erschlossen nach Themenfeld (Interessenabwägung, Bauen ausserhalb der Bauzone, Baubewilligung und Umwelt, Nutzungsplanung und Zweitwohnungen, Schutz/Enteignung/Mehrwertausgleich), Planungsanlass, betroffenem Schutzgut, Prüfdimension und Verfahrensausgang. Liefert Treffer mit Leitsatz, Normen und Link zum amtlichen Volltext, dazu Trefferzahlen je Merkmal (Facetten) und die Ausgangsstatistik (Erfolgsquote). Deterministisch, kein KI-Budget. Für die tagesaktuelle Volltextsuche über alle Gerichte: rechtsprechung_suchen.",
+    {
+      thema: z.enum(THEMENFELDER).optional().describe("Themenfeld (Rechtsgebiet) als Vorauswahl"),
+      anlass: z.string().optional().describe("Planungsanlass, z.B. 'einzonung', 'baubewilligung', 'ausserhalb_bauzone', 'wiederherstellung' (Vokabular in der Antwort unter vokabular.anlaesse)"),
+      schutzgut: z.string().optional().describe("Betroffene Schutzgüter/Interessen, kommagetrennt (ODER), z.B. 'bln,isos', 'laerm', 'gewaesserraum'"),
+      dimension: z.string().optional().describe("Prüfdimension des IAW-Checks, nur bei Entscheiden zur Interessenabwägung, z.B. 'varianten', 'verhaeltnismaessigkeit'"),
+      ausgang: z.string().optional().describe("Verfahrensausgang, kommagetrennt (ODER): gutgeheissen, teilweise_gutgeheissen, abgewiesen, rueckweisung, nichteintreten"),
+      norm: z.string().optional().describe("Norm als Klartext ('Art. 24 RPG') oder Slug ('art-24-rpg')"),
+      gericht: z.string().optional().describe("Etwa 'BGer', 'BVGer', 'VGer ZH'"),
+      ab: z.string().optional().describe("Jahr oder ISO-Datum, ab"),
+      bis: z.string().optional().describe("Jahr oder ISO-Datum, bis (einschliesslich)"),
+      suche: z.string().optional().describe("Freitext in Leitsatz, Aktenzeichen und Normen; alle Wörter müssen vorkommen"),
+      limit: z.number().min(1).max(50).optional().default(10),
+      offset: z.number().min(0).optional().default(0),
+    },
+    async ({ schutzgut, ...rest }) => {
+      const p = new URLSearchParams();
+      for (const [k, v] of Object.entries({ ...rest, killer: schutzgut })) {
+        if (v !== undefined && v !== null && String(v) !== "") p.set(k, String(v));
+      }
+      const data = await callIawApi(`/rechtsprechung?${p.toString()}`, { apiKey: ctx.apiKey });
+      return jsonResult(data);
+    }
+  );
+
+  // ============================================================================
   // TOOL: parzelle_geodaten — Geodaten für eine Parzelle abrufen
   // ============================================================================
   server.tool(

@@ -47,7 +47,7 @@ const httpServer = http.createServer(async (req, res) => {
   // Health Check
   if (req.method === "GET" && url.pathname === "/health") {
     res.writeHead(200, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({ status: "ok", server: "spektrum-mcp", version: "1.2.0" }));
+    res.end(JSON.stringify({ status: "ok", server: "spektrum-mcp", version: "1.3.0" }));
     return;
   }
 

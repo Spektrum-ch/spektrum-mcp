@@ -29,7 +29,7 @@ export const configSchema = z.object({});
 export function createSpektrumServer(apiKey?: string): McpServer {
   const server = new McpServer({
     name: "spektrum",
-    version: "1.2.0",
+    version: "1.3.0",
   });
 
   // Interessenabwägung + UVP-Screening (Action-Tools, API-Key aus Header oder IAW_API_KEY)
