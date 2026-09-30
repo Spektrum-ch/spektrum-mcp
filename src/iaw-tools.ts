@@ -182,7 +182,7 @@ export function registerIawTools(server: McpServer, ctx: IawContext = {}) {
   // TOOL: rechtsprechung_korpus_suchen — kuratierter Urteilskorpus (Urteilssuche)
   // Anders als rechtsprechung_suchen (Live-Volltextsuche bei entscheidsuche.ch)
   // antwortet dieses Werkzeug aus dem eigenen, annotierten Korpus von
-  // tools.spekt.ch/urteilssuche: Themenfeld, Planungsanlass, Schutzgut,
+  // urteilssuche.spekt.ch: Themenfeld, Planungsanlass, Schutzgut,
   // Prüfdimension, Verfahrensausgang, eigener Leitsatz je Entscheid,
   // Facetten und Ausgangsstatistik. Braucht den IAW-API-Key (GET /api/v1/rechtsprechung).
   // ============================================================================
@@ -195,7 +195,7 @@ export function registerIawTools(server: McpServer, ctx: IawContext = {}) {
   ] as const;
   server.tool(
     "rechtsprechung_korpus_suchen",
-    "Sucht im kuratierten Urteilskorpus der Urteilssuche (tools.spekt.ch/urteilssuche): Bundesgerichtspraxis zu Raumplanung und Baurecht mit eigenem Leitsatz je Entscheid, erschlossen nach Themenfeld (Interessenabwägung, Bauen ausserhalb der Bauzone, Baubewilligung und Umwelt, Nutzungsplanung und Zweitwohnungen, Schutz/Enteignung/Mehrwertausgleich), Planungsanlass, betroffenem Schutzgut, Prüfdimension und Verfahrensausgang. Liefert Treffer mit Leitsatz, Normen und Link zum amtlichen Volltext, dazu Trefferzahlen je Merkmal (Facetten) und die Ausgangsstatistik (Erfolgsquote). Deterministisch, kein KI-Budget. Für die tagesaktuelle Volltextsuche über alle Gerichte: rechtsprechung_suchen.",
+    "Sucht im kuratierten Urteilskorpus der Urteilssuche (urteilssuche.spekt.ch): Bundesgerichtspraxis zu Raumplanung und Baurecht mit eigenem Leitsatz je Entscheid, erschlossen nach Themenfeld (Interessenabwägung, Bauen ausserhalb der Bauzone, Baubewilligung und Umwelt, Nutzungsplanung und Zweitwohnungen, Schutz/Enteignung/Mehrwertausgleich), Planungsanlass, betroffenem Schutzgut, Prüfdimension und Verfahrensausgang. Liefert Treffer mit Leitsatz, Normen und Link zum amtlichen Volltext, dazu Trefferzahlen je Merkmal (Facetten) und die Ausgangsstatistik (Erfolgsquote). Deterministisch, kein KI-Budget. Für die tagesaktuelle Volltextsuche über alle Gerichte: rechtsprechung_suchen.",
     {
       thema: z.enum(THEMENFELDER).optional().describe("Themenfeld (Rechtsgebiet) als Vorauswahl"),
       anlass: z.string().optional().describe("Planungsanlass, z.B. 'einzonung', 'baubewilligung', 'ausserhalb_bauzone', 'wiederherstellung' (Vokabular in der Antwort unter vokabular.anlaesse)"),
